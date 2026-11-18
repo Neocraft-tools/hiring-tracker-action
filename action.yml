@@ -1,5 +1,5 @@
 name: "Company Hiring Tracker: New Job Alerts"
-description: "Track open jobs of any company (Greenhouse, Lever, Ashby, Workable...) and get new, changed and closed jobs since the last run."
+description: "Track open jobs of any company (Greenhouse, Lever, Ashby...) and get new, changed and closed jobs since last run."
 author: "Neocraft"
 branding:
   icon: "users"
