@@ -1,0 +1,104 @@
+name: "Company Hiring Tracker: New Job Alerts"
+description: "Track open jobs of any company (Greenhouse, Lever, Ashby, Workable...) and get new, changed and closed jobs since the last run."
+author: "Neocraft"
+branding:
+  icon: "users"
+  color: "red"
+
+inputs:
+  apify-token:
+    description: "Your Apify API token (store it as a secret). Runs are billed to this Apify account."
+    required: true
+  companies:
+    description: "Companies to track, separated by commas or new lines: name (Stripe), domain (doctolib.fr) or job-board URL."
+    required: true
+  mode:
+    description: "changes = only new/changed/reopened/closed jobs since the previous run (first run returns all open jobs); snapshot = all open jobs every time."
+    required: false
+    default: "changes"
+  state-key:
+    description: "Baseline name for changes mode (stored in your Apify account). Defaults to the repository name."
+    required: false
+    default: ""
+  title-include:
+    description: "Keep only job titles containing one of these words (comma separated), e.g. 'engineer, data'."
+    required: false
+    default: ""
+  title-exclude:
+    description: "Drop job titles containing one of these words (comma separated), e.g. 'intern'."
+    required: false
+    default: ""
+  countries:
+    description: "Keep only jobs in these countries (ISO codes, comma separated), e.g. 'FR, DE'."
+    required: false
+    default: ""
+  remote-only:
+    description: "Keep only remote jobs."
+    required: false
+    default: "false"
+  max-jobs-per-company:
+    description: "Maximum jobs returned per company (0 = no limit). Each returned job costs $0.001."
+    required: false
+    default: "0"
+  fail-on-new-jobs:
+    description: "Fail the step when new or reopened jobs are found (use GitHub's failure e-mail as the alert)."
+    required: false
+    default: "false"
+  extra-input:
+    description: "Optional JSON object merged into the Actor input (fields of neocraft/company-hiring-tracker, e.g. {\"history90d\": true})."
+    required: false
+    default: ""
+  max-total-charge-usd:
+    description: "Hard spend cap for the run in USD."
+    required: false
+    default: "0.25"
+  timeout-secs:
+    description: "Maximum run time of the Actor in seconds."
+    required: false
+    default: "900"
+  output-file:
+    description: "Where to save the full JSON results."
+    required: false
+    default: "hiring.json"
+
+outputs:
+  job-count:
+    description: "Number of job rows returned."
+    value: ${{ steps.run.outputs.job-count }}
+  new-count:
+    description: "New or reopened jobs (changes mode)."
+    value: ${{ steps.run.outputs.new-count }}
+  closed-count:
+    description: "Closed jobs (changes mode)."
+    value: ${{ steps.run.outputs.closed-count }}
+  jobs:
+    description: "Compact JSON array of jobs (company, title, changeType, department, country, remote, url)."
+    value: ${{ steps.run.outputs.jobs }}
+  results-file:
+    description: "Path of the full JSON results."
+    value: ${{ steps.run.outputs.results-file }}
+  run-url:
+    description: "Apify Console URL of the run."
+    value: ${{ steps.run.outputs.run-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: run
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/entrypoint.sh"
+      env:
+        APIFY_TOKEN: ${{ inputs.apify-token }}
+        INPUT_COMPANIES: ${{ inputs.companies }}
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_STATE_KEY: ${{ inputs.state-key }}
+        INPUT_TITLE_INCLUDE: ${{ inputs.title-include }}
+        INPUT_TITLE_EXCLUDE: ${{ inputs.title-exclude }}
+        INPUT_COUNTRIES: ${{ inputs.countries }}
+        INPUT_REMOTE_ONLY: ${{ inputs.remote-only }}
+        INPUT_MAX_JOBS_PER_COMPANY: ${{ inputs.max-jobs-per-company }}
+        INPUT_FAIL_ON_NEW_JOBS: ${{ inputs.fail-on-new-jobs }}
+        INPUT_EXTRA_INPUT: ${{ inputs.extra-input }}
+        INPUT_MAX_TOTAL_CHARGE_USD: ${{ inputs.max-total-charge-usd }}
+        INPUT_TIMEOUT_SECS: ${{ inputs.timeout-secs }}
+        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}

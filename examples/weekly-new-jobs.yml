@@ -1,0 +1,35 @@
+# Every Monday, list the new engineering jobs of a watchlist in the job summary
+# and post them to Slack (optional SLACK_WEBHOOK_URL secret).
+name: Weekly hiring tracker
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - id: hiring
+        uses: Neocraft-tools/hiring-tracker-action@v1
+        with:
+          apify-token: ${{ secrets.APIFY_TOKEN }}
+          companies: |
+            Stripe
+            Doctolib
+            Datadog
+          mode: changes
+          title-include: engineer, developer, data
+          max-total-charge-usd: "0.50"
+      - if: steps.hiring.outputs.new-count != '0' && env.SLACK_WEBHOOK_URL != ''
+        env:
+          JOBS: ${{ steps.hiring.outputs.jobs }}
+        run: |
+          TEXT=$(jq -r '[.[] | select(.changeType == "new") | "• \(.company): <\(.url)|\(.title)>"] | .[:30] | join("\n")' <<<"$JOBS")
+          jq -n --arg t "$(printf 'New jobs this week:\n%s' "$TEXT")" '{text: $t}' | curl -sS -X POST -H 'Content-Type: application/json' -d @- "$SLACK_WEBHOOK_URL"
